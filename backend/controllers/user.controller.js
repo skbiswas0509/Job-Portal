@@ -1,16 +1,11 @@
 import { User } from "../models/user.model.js";
-import bcrypt from "bcrypt.js";
-import jwt, { TokenExpiredError } from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export const register = async(req,res) => {
     try {
         const {fullname, email, phoneNumber, password, role} = req.body;
-        if(!fullname || !email || !phoneNumber || !role){
-            return res.status(400).json({
-                message: "Value is missing",
-                success: false
-            })
-        };
+         
         const user = await User.findOne({email});
         if(user){
             return res.status(400).json({
@@ -23,7 +18,7 @@ export const register = async(req,res) => {
         await User.create({
             fullname,
             email,
-            phonphoneNumbereNumber,
+            phoneNumber,
             password:hashedPassword,
             role,
         });
@@ -39,7 +34,7 @@ export const register = async(req,res) => {
         })
     }
 }
-export const Login = async (req,res) => {
+export const login = async (req,res) => {
     try{
         const {email, password, role} = req.body;
         if(!email || !password || !role){
@@ -98,4 +93,65 @@ export const Login = async (req,res) => {
             suceess: false
         })
     };
+}
+export const logout = async (req,res) => {
+    try {
+        return res.status(200).cookie("token", "", {maxAge:0}).json({
+            message: "Loggedout successfully",
+            success:true
+        })
+    } catch (error) {
+        console.log(error)
+    }
+}
+export const updateProfile = async (req,res) => {
+    try {
+        const {fullname, email, phoneNumber, bio, skills} = req.body;
+        const file = req.file
+        
+        // cloudianry
+
+        let skillsArray;
+        if(skills){
+            skillsArray = skills.split(",");
+        }
+        const userId = req.id;  //middleware authentication
+        let user = await User.findById(userId);
+
+        if(!user){
+            return res.status(400).json({
+                message: "User not found",
+                success: false
+            })
+        }
+    //update Data
+        if(fullname) user.fullname = fullname;
+        if(fullname) user.phoneNumber = phoneNumber;
+        if(email) user.email = email;
+        if(bio) user.profile.bio = bio;
+        if(skills) user.profile.skills = skillsArray;
+
+
+        //resume will come here later
+
+        await user.save()
+
+        user = {
+            _id:user._id,
+            fullname: user.fullname,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
+            role: user.role,
+            profile: user.profile
+        }
+
+        return res.status(201).json({
+            message: "Profile uodated successfully",
+            user,
+            success: true
+        })
+
+    } catch (error) {
+        console.log(error)
+    }
 }
