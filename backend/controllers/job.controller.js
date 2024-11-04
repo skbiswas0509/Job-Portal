@@ -1,4 +1,4 @@
-import { Job } from "../models/job.model";
+import { Job } from "../models/job.model.js";
 
 export const postJob = async (req,res) => {
     try {
@@ -41,7 +41,9 @@ export const getAllJobs = async(req,res) => {
                 {description:{$regex:keyword, $options:"i"}},
             ]
         };
-        const job = await Job.find(query)
+        const job = await Job.find(query).populate({
+            path:"company"
+        }).sort({createdAt:-1});
         if(!jobs){
             return res.status(404).json({
                 message: "Jobs not found",
